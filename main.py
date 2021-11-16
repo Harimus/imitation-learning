@@ -49,9 +49,10 @@ def main(cfg: DictConfig) -> None:
       discriminator_optimiser = optim.RMSprop(discriminator.parameters(), lr=cfg.imitation.learning_rate)
 
   # Metrics
-  metrics = dict(train_steps=[], train_returns=[], test_steps=[], test_returns=[])
+  metrics = dict(train_steps=[], train_returns=[], test_steps=[], test_returns=[], 
+  update_steps=[], predicted_returns=[], predicted_expert_returns=[], alphas=[], entropy=[], Q_values=[])
   recent_returns = deque(maxlen=cfg.evaluation.average_window)  # Stores most recent evaluation returns
-
+  recent_returns = deque(maxlen=cfg.evaluation.average_window)  # Stores most recent evaluation returns
   # Main training loop
   state, terminal, train_return, trajectories = env.reset(), False, 0, []
   if cfg.algorithm in ['AIRL', 'FAIRL', 'GAIL', 'PUGAIL']: policy_trajectory_replay_buffer = deque(maxlen=cfg.imitation.replay_size)
@@ -113,12 +114,15 @@ def main(cfg: DictConfig) -> None:
 
           # Predict rewards
           states, actions, next_states, terminals = policy_trajectories['states'], policy_trajectories['actions'], torch.cat([policy_trajectories['states'][1:], next_state]), policy_trajectories['terminals']
+          expert_states, expert_actions, expert_next_states =  expert_trajectories['states'], expert_trajectories['actions'], expert_trajectories['next_states']
+          expert_rewards = None
           with torch.inference_mode():
             if cfg.algorithm == 'AIRL':
               policy_trajectories['rewards'] = discriminator.predict_reward(states, actions, next_states, policy_trajectories['log_prob_actions'], terminals)
             elif cfg.algorithm == 'DRIL':
-              # TODO: By default DRIL also includes behavioural cloning online?
               policy_trajectories['rewards'] = discriminator.predict_reward(states, actions)
+              if cfg.save_aux_metrics:
+                expert_rewards = discriminator.predict_reward(expert_states, expert_actions)
             elif cfg.algorithm in ['FAIRL', 'GAIL', 'PUGAIL']:
               policy_trajectories['rewards'] = discriminator.predict_reward(states, actions)
             elif cfg.algorithm == 'GMMIL':
@@ -126,10 +130,20 @@ def main(cfg: DictConfig) -> None:
               policy_trajectories['rewards'] = discriminator.predict_reward(states, actions, expert_states, expert_actions)
             elif cfg.algorithm == 'RED':
               policy_trajectories['rewards'] = discriminator.predict_reward(states, actions)
+              if cfg.save_aux_metrics:
+                expert_rewards = discriminator.predict_reward(expert_states, expert_actions)
 
         # Perform PPO updates (includes GAE re-estimation with updated value function)
         for _ in tqdm(range(cfg.reinforcement.ppo_epochs), leave=False):
           ppo_update(agent, policy_trajectories, next_state, agent_optimiser, cfg.reinforcement.discount, cfg.reinforcement.trace_decay, cfg.reinforcement.ppo_clip, cfg.reinforcement.value_loss_coeff, cfg.reinforcement.entropy_loss_coeff, cfg.reinforcement.max_grad_norm)
+        if cfg.save_aux_metrics:
+          metrics['update_steps'].append(step), metrics['predicted_returns'].append(policy_trajectories['rewards'].numpy()), 
+          metrics['predicted_expert_returns'].append(expert_rewards.numpy())
+          log_prob = agent.actor.log_prob(state, action)
+          entropy = -torch.sum(log_prob.exp() * log_prob)
+          metrics['entropy'].append(entropy.numpy())
+          Q_value = agent.critic(state)
+          metrics['Q_values'].append(Q_value.numpy())
         trajectories, policy_trajectories = [], None
     
     
@@ -140,12 +154,12 @@ def main(cfg: DictConfig) -> None:
       metrics['test_steps'].append(step)
       metrics['test_returns'].append(test_returns)
       lineplot(metrics['test_steps'], metrics['test_returns'], 'test_returns')
-      if cfg.algorithm == 'BC':
-        lineplot(range(cfg.evaluation.interval, cfg.steps + 1, cfg.evaluation.interval), metrics['test_returns'] * (cfg.steps // cfg.evaluation.interval), 'test_returns')
-        break
-      elif len(metrics['train_returns']) > 0:  # Plot train returns if any
+      if len(metrics['train_returns']) > 0:  # Plot train returns if any
         lineplot(metrics['train_steps'], metrics['train_returns'], 'train_returns')
-    elif cfg.algorithm == 'BC' and cfg.check_time_usage: break
+        if cfg.save_aux_metrics:
+          lineplot(metrics['update_steps'][::10], metrics['predicted_returns'][::10], metrics['predicted_expert_returns'][::10], filename='predicted_returns', title=f'{cfg.env_name} : {cfg.algorithm}')
+          lineplot(metrics['update_steps'][::10], metrics['entropy'][::10], filename='sac_entropy', title=f'{cfg.env_name} : {cfg.algorithm}')
+          lineplot(metrics['update_steps'][::10], metrics['Q_values'][::10], filename='Q_values', title=f'{cfg.env_name} : {cfg.algorithm}')
 
   if cfg.check_time_usage:
     metrics['training_time'] = time.time() - start_time
