@@ -29,6 +29,7 @@ evaluation:
 save_trajectories: false
 render: false
 check_time_usage: false
+save_aux_metrics: true
 
 # Run/sweep directories
 hydra:

@@ -114,7 +114,9 @@ def main(cfg: DictConfig) -> None:
 
           # Predict rewards
           states, actions, next_states, terminals = policy_trajectories['states'], policy_trajectories['actions'], torch.cat([policy_trajectories['states'][1:], next_state]), policy_trajectories['terminals']
-          expert_states, expert_actions, expert_next_states =  expert_trajectories['states'], expert_trajectories['actions'], expert_trajectories['next_states']
+          expert_states, expert_actions, expert_next_states =  expert_trajectories['states'][1:], expert_trajectories['actions'][1:], expert_trajectories['states'][:-1]
+          subsample_idx = torch.ones(expert_states.shape[0]).multinomial(256) #temp hardcode
+          expert_states, expert_actions, expert_next_states = expert_states[subsample_idx], expert_actions[subsample_idx], expert_next_states[subsample_idx]
           expert_rewards = None
           with torch.inference_mode():
             if cfg.algorithm == 'AIRL':
@@ -139,11 +141,12 @@ def main(cfg: DictConfig) -> None:
         if cfg.save_aux_metrics:
           metrics['update_steps'].append(step), metrics['predicted_returns'].append(policy_trajectories['rewards'].numpy()), 
           metrics['predicted_expert_returns'].append(expert_rewards.numpy())
-          log_prob = agent.actor.log_prob(state, action)
-          entropy = -torch.sum(log_prob.exp() * log_prob)
-          metrics['entropy'].append(entropy.numpy())
-          Q_value = agent.critic(state)
-          metrics['Q_values'].append(Q_value.numpy())
+          with torch.inference_mode():
+              log_prob = agent.actor.log_prob(state, action)
+              entropy = -torch.sum(log_prob.exp() * log_prob)
+              metrics['entropy'].append(entropy.numpy())
+              Q_value = agent.critic(state)
+              metrics['Q_values'].append(Q_value.numpy())
         trajectories, policy_trajectories = [], None
     
     
