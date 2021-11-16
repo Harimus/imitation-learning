@@ -143,8 +143,8 @@ def main(cfg: DictConfig) -> None:
           metrics['predicted_expert_returns'].append(expert_rewards.numpy())
           with torch.inference_mode():
               log_prob = agent.actor.log_prob(state, action)
-              entropy = -torch.sum(log_prob.exp() * log_prob)
-              metrics['entropy'].append(entropy.numpy())
+              entropy = -log_prob.exp() * log_prob
+              metrics['entropy'].append(entropy.detach().numpy())
               Q_value = agent.critic(state)
               metrics['Q_values'].append(Q_value.numpy())
         trajectories, policy_trajectories = [], None
@@ -156,13 +156,13 @@ def main(cfg: DictConfig) -> None:
       recent_returns.append(sum(test_returns) / cfg.evaluation.episodes)
       metrics['test_steps'].append(step)
       metrics['test_returns'].append(test_returns)
-      lineplot(metrics['test_steps'], metrics['test_returns'], 'test_returns')
+      lineplot(metrics['test_steps'], metrics['test_returns'], title='test_returns')
       if len(metrics['train_returns']) > 0:  # Plot train returns if any
-        lineplot(metrics['train_steps'], metrics['train_returns'], 'train_returns')
+        lineplot(metrics['train_steps'], metrics['train_returns'], title='train_returns')
         if cfg.save_aux_metrics:
-          lineplot(metrics['update_steps'][::10], metrics['predicted_returns'][::10], metrics['predicted_expert_returns'][::10], filename='predicted_returns', title=f'{cfg.env_name} : {cfg.algorithm}')
-          lineplot(metrics['update_steps'][::10], metrics['entropy'][::10], filename='sac_entropy', title=f'{cfg.env_name} : {cfg.algorithm}')
-          lineplot(metrics['update_steps'][::10], metrics['Q_values'][::10], filename='Q_values', title=f'{cfg.env_name} : {cfg.algorithm}')
+          lineplot(metrics['update_steps'], metrics['predicted_returns'], metrics['predicted_expert_returns'], filename='predicted_returns', title=f'{cfg.env_name} : {cfg.algorithm}')
+          lineplot(metrics['update_steps'], metrics['entropy'], filename='ppo_entropy', title=f'{cfg.env_name} : {cfg.algorithm}')
+          lineplot(metrics['update_steps'], metrics['Q_values'], filename='Q_values', title=f'{cfg.env_name} : {cfg.algorithm}')
 
   if cfg.check_time_usage:
     metrics['training_time'] = time.time() - start_time
