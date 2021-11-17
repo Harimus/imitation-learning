@@ -142,10 +142,10 @@ def main(cfg: DictConfig) -> None:
           metrics['update_steps'].append(step), metrics['predicted_returns'].append(policy_trajectories['rewards'].numpy()), 
           metrics['predicted_expert_returns'].append(expert_rewards.numpy())
           with torch.inference_mode():
-              log_prob = agent.actor.log_prob(state, action)
+              log_prob = agent.actor.log_prob(states, actions)
               entropy = -log_prob.exp() * log_prob
               metrics['entropy'].append(entropy.detach().numpy())
-              Q_value = agent.critic(state)
+              Q_value = agent.critic(states)
               metrics['Q_values'].append(Q_value.numpy())
         trajectories, policy_trajectories = [], None
     
