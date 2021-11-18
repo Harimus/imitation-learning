@@ -103,7 +103,7 @@ class D4RL_pybulletEnv():
     return TransitionDataset(dataset_out)
 
 class D4RLEnv():
-  def __init__(self, env_name, absorbing, load_data=False):
+  def __init__(self, env_name, absorbing=False, load_data=False):
     self.env = gym.make(env_name)
     if load_data: self.dataset = self.env.get_dataset()  # Load dataset before (potentially) adjusting observation_space (fails assertion check otherwise)
     self.env.action_space.high, self.env.action_space.low = torch.as_tensor(self.env.action_space.high), torch.as_tensor(self.env.action_space.low)  # Convert action space for action clipping

@@ -25,7 +25,7 @@ def main(cfg: DictConfig) -> None:
   torch.manual_seed(cfg.seed)
 
   # Set up environment
-  env = ENVS[cfg.env_type](cfg.env_name)
+  env = ENVS[cfg.env_type](cfg.env_name, load_data=True)
   env.seed(cfg.seed)
   expert_trajectories = env.get_dataset()  # Load expert trajectories dataset
   state_size, action_size = env.observation_space.shape[0], env.action_space.shape[0]
