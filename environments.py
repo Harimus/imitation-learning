@@ -4,6 +4,7 @@ import d4rl_pybullet
 import d4rl
 import gym
 import numpy as np
+import pickle, os
 import torch
 from gym.spaces import Box
 
@@ -56,6 +57,14 @@ class D4RL_pybulletEnv():
     assert env_name in D4RL_ENV_NAMES
     
     self.env = gym.make(env_name)
+    if 'ant' in env_name:
+      self.use_RED_DATA = True
+    if self.use_RED_DATA:
+      file_location = os.path.expanduser('~/external_repos/RED/data/Ant-v2.pkl')
+      filehande = open(file_location, 'rb')
+      self.dataset = pickle.load(filehande)
+    else:
+      self.dataset = self.env.get_dataset()  # Load dataset before (potentially) adjusting observation_space (fails assertion check otherwise)
     self.env.action_space.high, self.env.action_space.low = torch.as_tensor(self.env.action_space.high), torch.as_tensor(self.env.action_space.low)  # Convert action space for action clipping
 
   def reset(self):
@@ -85,6 +94,16 @@ class D4RL_pybulletEnv():
     return self.env.action_space
 
   def get_dataset(self, size=0, subsample=20):
+    if self.use_RED_DATA:
+      states = torch.as_tensor(self.dataset['observations'][:-1], dtype=torch.float32)
+      actions = torch.as_tensor(self.dataset['actions'][:-1], dtype=torch.float32)
+      actions = actions.squeeze() # (4000, 1, 8) -> (4000, 8)
+      next_states = torch.as_tensor(self.dataset['observations'][1:], dtype=torch.float32)
+      terminals = torch.zeros(len(self.dataset['actions'][:-1]), dtype=torch.float32)
+      weights = torch.ones_like(terminals)
+      rewards = torch.zeros_like(terminals)
+      transitions = dict(states=states, actions=actions, next_states=next_states, terminals=terminals, weights=weights, rewards=rewards)
+      return TransitionDataset(transitions) 
     dataset = self.env.get_dataset()
     N = dataset['rewards'].shape[0]
     dataset_out = {'states': torch.as_tensor(dataset['observations'][:-1], dtype=torch.float32),
@@ -105,7 +124,16 @@ class D4RL_pybulletEnv():
 class D4RLEnv():
   def __init__(self, env_name, absorbing=False, load_data=False):
     self.env = gym.make(env_name)
-    if load_data: self.dataset = self.env.get_dataset()  # Load dataset before (potentially) adjusting observation_space (fails assertion check otherwise)
+    if load_data:
+      if 'ant' in env_name:
+        self.use_RED_DATA = True
+      if self.use_RED_DATA:
+        file_location = os.path.expanduser('~/external_repos/RED/data/Ant-v2.pkl')
+        filehande = open(file_location, 'rb')
+        print(f"Using RED OG data from: {file_location} ")
+        self.dataset = pickle.load(filehande)
+      else:
+        self.dataset = self.env.get_dataset()  # Load dataset before (potentially) adjusting observation_space (fails assertion check otherwise)
     self.env.action_space.high, self.env.action_space.low = torch.as_tensor(self.env.action_space.high), torch.as_tensor(self.env.action_space.low)  # Convert action space for action clipping
 
     self.absorbing = absorbing
@@ -147,6 +175,16 @@ class D4RLEnv():
 
   def get_dataset(self, trajectories=-1, subsample=20):
     # Extract data
+    if self.use_RED_DATA:
+      states = torch.as_tensor(self.dataset['observations'][:-1], dtype=torch.float32)
+      actions = torch.as_tensor(self.dataset['actions'][:-1], dtype=torch.float32)
+      actions = actions.squeeze() # (4000, 1, 8) -> (4000, 8)
+      next_states = torch.as_tensor(self.dataset['observations'][1:], dtype=torch.float32)
+      terminals = torch.zeros(len(self.dataset['actions'][:-1]), dtype=torch.float32)
+      weights = torch.ones_like(terminals)
+      rewards = torch.zeros_like(terminals)
+      transitions = dict(states=states, actions=actions, next_states=next_states, terminals=terminals, weights=weights, rewards=rewards)
+      return TransitionDataset(transitions) 
     states = torch.as_tensor(self.dataset['observations'], dtype=torch.float32)
     actions = torch.as_tensor(self.dataset['actions'], dtype=torch.float32)
     next_states = torch.as_tensor(self.dataset['next_observations'], dtype=torch.float32)
