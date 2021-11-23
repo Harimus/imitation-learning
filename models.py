@@ -25,11 +25,10 @@ def _gaussian_kernel(x, y, gamma=1):
 
 
 # Creates a sequential fully-connected network
-def _create_fcnn(input_size, hidden_size, output_size, activation_function, dropout=0, final_gain=1.0):
+def _create_fcnn(input_size, hidden_size, output_size, activation_function, dropout=0, final_gain=1.0, depth=2):
   assert activation_function in ACTIVATION_FUNCTIONS.keys()
   
-  network_dims, layers = (input_size, hidden_size, hidden_size), []
-
+  network_dims, layers = (input_size, *[hidden_size] * depth), []
   for l in range(len(network_dims) - 1):
     layer = nn.Linear(network_dims[l], network_dims[l + 1])
     nn.init.orthogonal_(layer.weight, gain=nn.init.calculate_gain(activation_function))
@@ -172,9 +171,9 @@ class AIRLDiscriminator(nn.Module):
 
 
 class EmbeddingNetwork(nn.Module):
-  def __init__(self, input_size, hidden_size):
+  def __init__(self, input_size, hidden_size, depth=2):
     super().__init__()
-    self.embedding = _create_fcnn(input_size, hidden_size, input_size, 'tanh')
+    self.embedding = _create_fcnn(input_size, hidden_size, input_size, 'tanh', depth=depth)
 
   def forward(self, input):
     return self.embedding(input)
@@ -185,8 +184,14 @@ class REDDiscriminator(nn.Module):
     super().__init__()
     self.action_size, self.state_only = action_size, state_only
     self.sigma_1 = None
-    self.predictor = EmbeddingNetwork(state_size if state_only else state_size + action_size, hidden_size)
-    self.target = EmbeddingNetwork(state_size if state_only else state_size + action_size, hidden_size)
+    hidden_size=128
+    depth=1
+    print(f"Predictor (traned) network with hidden: {hidden_size} and depth: {depth}")
+    self.predictor = EmbeddingNetwork(state_size if state_only else state_size + action_size, hidden_size, depth=depth)
+    hidden_size=128
+    depth=4
+    print(f"Target (Fixed) network with hidden: {hidden_size} and depth: {depth}")
+    self.target = EmbeddingNetwork(state_size if state_only else state_size + action_size, hidden_size, depth=depth)
     for param in self.target.parameters():
       param.requires_grad = False
 
