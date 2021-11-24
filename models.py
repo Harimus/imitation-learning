@@ -4,7 +4,7 @@ from torch import nn
 from torch.distributions import Independent, Normal
 from torch.nn import Parameter, functional as F
 
-ACTIVATION_FUNCTIONS = {'relu': nn.ReLU, 'sigmoid': nn.Sigmoid, 'tanh': nn.Tanh}
+ACTIVATION_FUNCTIONS = {'relu': nn.ReLU, 'sigmoid': nn.Sigmoid, 'tanh': nn.Tanh, 'leaky_relu': nn.LeakyReLU}
 
 
 # Concatenates the state and action (previously one-hot discrete version)
@@ -173,7 +173,7 @@ class AIRLDiscriminator(nn.Module):
 class EmbeddingNetwork(nn.Module):
   def __init__(self, input_size, hidden_size, depth=2):
     super().__init__()
-    self.embedding = _create_fcnn(input_size, hidden_size, input_size, 'tanh', depth=depth)
+    self.embedding = _create_fcnn(input_size, hidden_size, input_size, 'leaky_relu', depth=depth)
 
   def forward(self, input):
     return self.embedding(input)
@@ -207,4 +207,5 @@ class REDDiscriminator(nn.Module):
 
   def predict_reward(self, state, action):
     prediction, target = self.forward(state, action)
+    #return torch.exp(-self.sigma_1 * (target-prediction).pow(2).mean(axis=-1))
     return _gaussian_kernel(prediction, target, gamma=self.sigma_1).mean(dim=1)

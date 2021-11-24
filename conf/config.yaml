@@ -7,7 +7,7 @@ defaults:
 seed: 0
 steps: 2000000
 model:
-  hidden_size: 256
+  hidden_size: 100 #256
   log_std_dev_init: -2
 reinforcement:
   discount: 0.99
