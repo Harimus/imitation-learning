@@ -5,7 +5,7 @@ defaults:
   - override hydra/sweeper: basic
 
 seed: 0
-steps: 2000000
+steps: 5000000
 model:
   hidden_size: 100 #256
   log_std_dev_init: -2
@@ -30,7 +30,7 @@ save_trajectories: false
 render: false
 check_time_usage: false
 save_aux_metrics: true
-
+use_old_data: false #only for RED
 # Run/sweep directories
 hydra:
   run:

@@ -5,7 +5,7 @@ env_name: ant-expert-v2
 
 algorithm: RED
 training:
-  batch_size: 1024
+  batch_size: 32 #1024
 reinforcement:
   learning_rate: 0.00003
   ppo_epochs: 10
@@ -13,3 +13,9 @@ reinforcement:
 imitation:
   epochs: 200 #15
   learning_rate: 0.001 #0.00003
+  target_hidden_size: 128
+  target_depth: 4
+  predictor_hidden_size: 128
+  predictor_depth: 1
+  
+discriminator_adam: True

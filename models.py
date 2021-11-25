@@ -180,18 +180,14 @@ class EmbeddingNetwork(nn.Module):
 
 
 class REDDiscriminator(nn.Module):
-  def __init__(self, state_size, action_size, hidden_size, state_only=False):
+  def __init__(self, state_size, action_size, target_hidden_size, predictor_hidden_size, target_depth=4, predictor_depth=1, state_only=False):
     super().__init__()
     self.action_size, self.state_only = action_size, state_only
     self.sigma_1 = None
-    hidden_size=128
-    depth=1
-    print(f"Predictor (traned) network with hidden: {hidden_size} and depth: {depth}")
-    self.predictor = EmbeddingNetwork(state_size if state_only else state_size + action_size, hidden_size, depth=depth)
-    hidden_size=128
-    depth=4
-    print(f"Target (Fixed) network with hidden: {hidden_size} and depth: {depth}")
-    self.target = EmbeddingNetwork(state_size if state_only else state_size + action_size, hidden_size, depth=depth)
+    print(f"Predictor (traned) network with hidden: {predictor_hidden_size} and depth: {predictor_depth}")
+    self.predictor = EmbeddingNetwork(state_size if state_only else state_size + action_size, predictor_hidden_size, depth=predictor_depth)
+    print(f"Target (Fixed) network with hidden: {target_hidden_size} and depth: {target_depth}")
+    self.target = EmbeddingNetwork(state_size if state_only else state_size + action_size, target_hidden_size, depth=target_depth)
     for param in self.target.parameters():
       param.requires_grad = False
 

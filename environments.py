@@ -121,16 +121,19 @@ class D4RL_pybulletEnv():
 
     return TransitionDataset(dataset_out)
 
+
+OLD_DATA_NAMES = {'ant-expert-v2': 'Ant-v2.pkl', 'halfcheetah-expert-v2': 'Halfcheetah-v2.pkl',
+                  'hopper-expert-v2': 'Hopper-v2.pkl', 'walker2d-expert-v2': 'Walker2d-v2.pkl' }
 class D4RLEnv():
-  def __init__(self, env_name, absorbing=False, load_data=False):
+  def __init__(self, env_name, absorbing=False, load_data=False, use_old_data=False):
     self.env = gym.make(env_name)
     if load_data:
-      if 'ant' in env_name:
-        self.use_RED_DATA = True
+      self.use_RED_DATA = use_old_data
       if self.use_RED_DATA:
-        file_location = os.path.expanduser('~/external_repos/RED/data/Ant-v2.pkl')
+        filename = OLD_DATA_NAMES[env_name]
+        file_location = os.path.expanduser(f'~/external_repos/RED/data/{filename}')
         filehande = open(file_location, 'rb')
-        print(f"Using RED OG data from: {file_location} ")
+        print(f"Using RED OG data from: {file_location} , (note: no subsampling) ")
         self.dataset = pickle.load(filehande)
       else:
         self.dataset = self.env.get_dataset()  # Load dataset before (potentially) adjusting observation_space (fails assertion check otherwise)

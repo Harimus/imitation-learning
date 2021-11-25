@@ -25,7 +25,7 @@ def main(cfg: DictConfig) -> None:
   torch.manual_seed(cfg.seed)
 
   # Set up environment
-  env = ENVS[cfg.env_type](cfg.env_name, load_data=True)
+  env = ENVS[cfg.env_type](cfg.env_name, load_data=True, use_old_data=cfg.use_old_data)
   env.seed(cfg.seed)
   expert_trajectories = env.get_dataset()  # Load expert trajectories dataset
   state_size, action_size = env.observation_space.shape[0], env.action_space.shape[0]
@@ -44,7 +44,7 @@ def main(cfg: DictConfig) -> None:
     elif cfg.algorithm == 'GMMIL':
       discriminator = GMMILDiscriminator(state_size, action_size, self_similarity=cfg.imitation.self_similarity, state_only=cfg.imitation.state_only)
     elif cfg.algorithm == 'RED':
-      discriminator = REDDiscriminator(state_size, action_size, cfg.model.hidden_size, state_only=cfg.imitation.state_only)
+      discriminator = REDDiscriminator(state_size, action_size, cfg.imitation.target_hidden_size, cfg.imitation.predictor_hidden_size, cfg.imitation.target_depth, cfg.imitation_predictor_depth, state_only=cfg.imitation.state_only)
     if cfg.algorithm in ['AIRL', 'DRIL', 'FAIRL', 'GAIL', 'PUGAIL', 'RED']:
       if cfg.discriminator_adam:
         discriminator_optimiser = optim.Adam(discriminator.parameters(), lr=cfg.imitation.learning_rate)
