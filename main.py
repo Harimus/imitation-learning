@@ -44,7 +44,7 @@ def main(cfg: DictConfig) -> None:
     elif cfg.algorithm == 'GMMIL':
       discriminator = GMMILDiscriminator(state_size, action_size, self_similarity=cfg.imitation.self_similarity, state_only=cfg.imitation.state_only)
     elif cfg.algorithm == 'RED':
-      discriminator = REDDiscriminator(state_size, action_size, cfg.imitation.target_hidden_size, cfg.imitation.predictor_hidden_size, cfg.imitation.target_depth, cfg.imitation_predictor_depth, state_only=cfg.imitation.state_only)
+      discriminator = REDDiscriminator(state_size, action_size, cfg.imitation.target_hidden_size, cfg.imitation.predictor_hidden_size, cfg.imitation.target_depth, cfg.imitation.predictor_depth, state_only=cfg.imitation.state_only)
     if cfg.algorithm in ['AIRL', 'DRIL', 'FAIRL', 'GAIL', 'PUGAIL', 'RED']:
       if cfg.discriminator_adam:
         discriminator_optimiser = optim.Adam(discriminator.parameters(), lr=cfg.imitation.learning_rate)
