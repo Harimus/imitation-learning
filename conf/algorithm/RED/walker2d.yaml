@@ -1,6 +1,6 @@
 # @package _global_
 env_type: walker2d
-env_name: walker2d-bullet-medium-v0
+env_name: walker2d-expert-v2
 
 algorithm: RED
 training:
@@ -10,5 +10,13 @@ reinforcement:
   ppo_epochs: 10
   entropy_loss_coeff: 0.0
 imitation:
-  epochs: 25
-  learning_rate: 0.0003
+  epochs: 200 #15
+  learning_rate: 0.001 #0.00003
+  target_hidden_size: 128
+  target_depth: 4
+  predictor_hidden_size: 128
+  predictor_depth: 1
+  entropy_loss_coeff: 0.001
+  
+discriminator_adam: True
+sigma: 250000
