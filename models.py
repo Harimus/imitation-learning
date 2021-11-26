@@ -200,6 +200,8 @@ class REDDiscriminator(nn.Module):
   def set_sigma(self, expert_state, expert_action):
     prediction, target = self.forward(expert_state, expert_action)
     self.sigma_1 = 1 / _squared_distance(prediction.transpose(0, 1), target.transpose(0, 1)).median().item()
+    self.sigma_1 = 250000
+    print(f"sigma: {self.sigma_1}")
 
   def predict_reward(self, state, action):
     prediction, target = self.forward(state, action)
