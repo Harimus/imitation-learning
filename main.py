@@ -161,7 +161,7 @@ def main(cfg: DictConfig) -> None:
       metrics['test_returns'].append(test_returns)
       lineplot(metrics['test_steps'], metrics['test_returns'], title='test_returns')
       if len(metrics['train_returns']) > 0:  # Plot train returns if any
-        lineplot(metrics['train_steps'], metrics['train_returns'], title='train_returns')
+        lineplot(metrics['train_steps'], metrics['train_returns'], filename='train_returns', title='train_returns')
         if cfg.save_aux_metrics:
           lineplot(metrics['update_steps'], metrics['predicted_returns'], metrics['predicted_expert_returns'], filename='predicted_returns', title=f'{cfg.env_name} : {cfg.algorithm}')
           lineplot(metrics['update_steps'], metrics['entropy'], filename='ppo_entropy', title=f'{cfg.env_name} : {cfg.algorithm}')
