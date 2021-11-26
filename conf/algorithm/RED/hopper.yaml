@@ -12,3 +12,4 @@ reinforcement:
 imitation:
   epochs: 25
   learning_rate: 0.0003
+sigma: 250000

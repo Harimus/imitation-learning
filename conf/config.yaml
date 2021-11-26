@@ -31,6 +31,7 @@ render: false
 check_time_usage: false
 save_aux_metrics: true
 use_old_data: false #only for RED
+sigma: 0
 # Run/sweep directories
 hydra:
   run:

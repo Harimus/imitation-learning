@@ -197,10 +197,11 @@ class REDDiscriminator(nn.Module):
     return prediction, target
 
   # Originally, sets σ based such that r(s, a) from expert demonstrations ≈ 1; instead this uses kernel median heuristic (same as GMMIL)
-  def set_sigma(self, expert_state, expert_action):
+  def set_sigma(self, expert_state, expert_action, hardcode_sigma=0):
     prediction, target = self.forward(expert_state, expert_action)
     self.sigma_1 = 1 / _squared_distance(prediction.transpose(0, 1), target.transpose(0, 1)).median().item()
-    self.sigma_1 = 250000
+    if hardcode_sigma > 0:
+        self.sigma_1 = hardcode_sigma 
     print(f"sigma: {self.sigma_1}")
 
   def predict_reward(self, state, action):

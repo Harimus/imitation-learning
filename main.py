@@ -78,7 +78,7 @@ def main(cfg: DictConfig) -> None:
             # Train predictor network to match random target network
             target_estimation_update(discriminator, expert_trajectories, discriminator_optimiser, cfg.training.batch_size)
             with torch.inference_mode():
-              discriminator.set_sigma(expert_trajectories['states'], expert_trajectories['actions'])
+              discriminator.set_sigma(expert_trajectories['states'], expert_trajectories['actions'], cfg.sigma)
 
         if cfg.check_time_usage:
           metrics['pre_training_time'] = time.time() - start_time
